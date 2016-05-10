@@ -4,27 +4,19 @@ local game = {}
 
 local world = bump.newWorld(64)
 local floor = {x= 0,y=600,w=1000,h=120}
-local player = {x=200,y=50,w=64,h=128}
+local player = {x=200,y=50,w=64,h=128,speedY=0}
 
 
-local collides = {} 
+local collides = {}
 
-local playerFilter = function(item, other)
-  
-local right = false
-
-  if     other.isFloor   then return 'touch'
-  end
-  -- else return nil
-end
 function game.load()
     love.mouse.setVisible(true)
     --game.keyboard.setKeyRepeat( true )
     scenes = { intro = intro, menu = menu, game = game}
     --change_scene("game")
     
-    gravity = 400
-    speed = 250
+    gravity = 600
+    speed = 400
     jump = false
     jumpspeed = -600
     isjumping = false
@@ -40,64 +32,59 @@ function change_scene(new)
     scenes[scene].load()
 end
 function game.update(dt)
+  local actualX, actualY, cols, len = world:move(player, player.x, player.y + player.speedY*dt)
   
-
-local actualX, actualY, cols, len = world:move(player, player.x, player.y+gravity*dt)
-
-
-player.x = actualX
-player.y = actualY
-jump = false
-
-
-if not jumping then
-for i=1,len do
+  -- Checa se o player bateu no chão e zera a speed vertical
+  for i=1,len do
     local other = cols[i].other
+    if other == floor then
+      player.speedY = 0
+    end
+  end
+  
+  player.speedY = player.speedY + gravity*dt
+  
+  player.x = actualX
+  player.y = actualY
+
+  if love.keyboard.isDown('right','d') then
+       actualX, actualY, cols, len = world:move(player, player.x+speed*dt, player.y)
+  end
+  if love.keyboard.isDown('left','a') then
+       actualX, actualY, cols, len = world:move(player, player.x-speed*dt, player.y)
+  end
+
+  player.x = actualX
+  player.y = actualY
+end
+
+function game.keypressed(key)
+  if key == "up" then
+    canJump = false
+    
+    local actualX, actualY, cols, len = world:check(player, player.x, player.y + 1)
+    print(len)
+    for i=1,len do
+      local other = cols[i].other
       if other == floor then
-        jump = true
+        canJump = true
         break
       end
-end
-else 
-   
-   actualX, actualY, cols, len = world:move(player, player.x, player.y+jumpspeed*dt)
-   player.x = actualX
-   player.y = actualY
-   time = time + dt
-   if time > jumptime then
-     time = 0 
-     jumping = false
     end
-end
-
-if love.keyboard.isDown('right','d') then
-     actualX, actualY, cols, len = world:move(player, player.x+speed*dt, player.y)
-end
-if love.keyboard.isDown('left','a') then
-     actualX, actualY, cols, len = world:move(player, player.x-speed*dt, player.y)
-end
-if love.keyboard.isDown('up','w','space') and not jumping then
-    if jump then 
-    jumping = true
-     actualX, actualY, cols, len = world:move(player, player.x, player.y+jumpspeed*dt)
+    
+    if canJump then 
+      player.speedY = player.speedY - 500
     end
+  else
+  end
 end
 
-player.x = actualX
-player.y = actualY
-
-
-
-end
-function game.keypressed(key)
-     if key == "" then
-       right = true 
-     else
-       right = false
-     end
-end
 function game.keyreleased(key)
- 
+  if key == "up" then
+    if player.speedY < -200 then
+      player.speedY = -200
+    end
+  end
 end
 function game.mousepressed(x, y, button, istouch)
  
