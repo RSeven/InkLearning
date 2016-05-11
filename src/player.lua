@@ -1,10 +1,15 @@
 local class = require 'middleclass'
+local cron = require 'cron'
 
 Player = class('Player')
 
 local JMP_SPD = -500
 local HOP_SPD = -200
 local WALK_SPD = 500
+local DASH_SPD = 1000
+
+local direction = { right = 1, left = -1 }
+
 
 function Player:initialize(x, y, w, h, speedX, speedY)
   self.x = x
@@ -13,6 +18,8 @@ function Player:initialize(x, y, w, h, speedX, speedY)
   self.h = h
   self.speedX = speedX
   self.speedY = speedY
+  self.dir = direction.right
+  self.walking = false
 end
 
 function Player:jump()
@@ -26,17 +33,26 @@ function Player:shortHop()
 end
 
 function Player:moveRight()
-  self:move(WALK_SPD)
+  self.dir = direction.right
+  self:move(self.dir*WALK_SPD)  
 end
 
 function Player:moveLeft()
-  self:move(-WALK_SPD)
+  self.dir = direction.left
+  self:move(self.dir*WALK_SPD)
 end
 
 function Player:move(spd)
   self.speedX = spd
+  self.walking = true
 end
 
 function Player:stop()
   self.speedX = 0
+  self.walking = false
+end
+function Player:dash()
+  self:move(self.dir*(self.speedX + DASH_SPD))
+  
+  
 end
