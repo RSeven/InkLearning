@@ -20,6 +20,7 @@ function Player:initialize(x, y, w, h, speedX, speedY)
   self.speedY = speedY
   self.dir = direction.right
   self.walking = false
+  self.dashing = false
 end
 
 function Player:jump()
@@ -48,11 +49,15 @@ function Player:move(spd)
 end
 
 function Player:stop()
-  self.speedX = 0
-  self.walking = false
+
+    self.speedX = 0
+    self.walking = false
+    self.dashing = false
+
 end
-function Player:dash()
+function Player:dash()  
   self:move(self.dir*(self.speedX + DASH_SPD))
-  
+  self.walking = false
+  self.dashing = true   
   
 end

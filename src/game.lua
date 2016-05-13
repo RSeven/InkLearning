@@ -4,13 +4,15 @@ local cron = require 'cron'
 local gamera = require 'gamera'
 local anim8 = require 'anim8'
 
+local level = require 'level'
+
 local game = {}
 
 local world = bump.newWorld(64)
 local cam = gamera.new(0,0,2560,1440)
 
-local floor = {x=0,y=600,w=500,h=120}
-local floor2 = {x= 900, y=600,w=500,h=120}
+local floor1 = {x=0,y=600,w=500,h=120}
+--local floor2 = {x= 900, y=600,w=500,h=120}
 local player = Player:new(200, 50, 64, 128, 0, 0)
 
 local collides = {}
@@ -26,8 +28,15 @@ function game.load()
   gravity = 600
   campost = 0
   
-  world:add(floor, floor.x, floor.y, floor.w, floor.h)
-  world:add(floor2, floor2.x, floor2.y, floor2.w, floor2.h)
+for i=2,#level.floors,1 do
+   local name = "floor" .. i
+   local t = level.floors
+   world:add(floor2,t[i].x,t[i].y,t[i].w,t[i].h)
+end
+
+  
+  world:add(floor1, floor1.x, floor1.y, floor1.w, floor1.h)
+  --world:add(floor2, floor2.x, floor2.y, floor2.w, floor2.h)
   world:add(player, player.x, player.y, player.w, player.h)
   
   SBR = love.graphics.newImage('assets/SBR.png')
@@ -44,6 +53,16 @@ function game.load()
   IdleanimationR = anim8.newAnimation(gir('1-4',1), 0.1)
   IdleanimationL = anim8.newAnimation(gil('1-4',1), 0.1) 
   
+  DASHR = love.graphics.newImage('assets/DASHR.png')
+  DASHL = love.graphics.newImage('assets/DASHL.png')
+  local gdr = anim8.newGrid(60, 50, DASHR:getWidth(), DASHR:getHeight())
+  local gdl = anim8.newGrid(60, 50, DASHL:getWidth(), DASHL:getHeight())
+  DashanimationR = anim8.newAnimation(gdr('1-6',1), 0.033333)
+  DashanimationL = anim8.newAnimation(gdl('1-6',1), 0.033333)
+  
+  jump = love.graphics.newImage('assets/Jump.png')  
+  fall = love.graphics.newImage('assets/Fall.png')
+  
   
 end
 
@@ -54,13 +73,13 @@ end
 
 function game.update(dt)
   player.speedY = player.speedY + gravity*dt
-  local actualX, actualY, cols, len = world:move(player, player.x + player.speedX*dt, player.y + player.speedY*dt)
+ actualX, actualY, cols, len = world:move(player, player.x + player.speedX*dt, player.y + player.speedY*dt)
   
   -- Checa se o player bateu no chão e zera a speed vertical
   if actualX == player.x + player.speedX*dt then
     for i=1,len do
       local other = cols[i].other
-      if other == floor then
+      if other == floor1 then
         player.speedY = 0
       elseif other == floor2 then
         player.speedY = 0
@@ -68,10 +87,10 @@ function game.update(dt)
     end
   end
   
-if actualX > player.x then
+if actualX > player.x and player.walking then
     WalkanimationR:update(dt)
 end
-if actualX < player.x then
+if actualX < player.x and player.walking then
     WalkanimationL:update(dt)
 end
 if actualX == player.x then
@@ -81,7 +100,13 @@ if actualX == player.x then
     IdleanimationL:update(dt)
   end
 end
-
+if player.dashing then
+  if player.dir == 1 then
+    DashanimationR:update(dt)
+  else
+    DashanimationL:update(dt)
+  end
+end
   stop_dash:update(dt)
   
   player.x, player.y = actualX, actualY
@@ -99,7 +124,7 @@ function game.keypressed(key)
 
     for i=1,len do
       local other = cols[i].other
-      if other == floor or other == floor2 then
+      if other == floor1 or other == floor2 then
         canJump = true
         break
       end
@@ -131,13 +156,13 @@ function game.keyreleased(key)
   end
   
   if key == "right" then
-    if player.speedX > 0 then
+    if player.speedX > 0 and player.dashing == false then
       player:stop()
     end
   end
   
   if key == "left" then
-    if player.speedX < 0 then
+    if player.speedX < 0 and player.dashing == false then
       player:stop()
     end
   end
@@ -162,27 +187,46 @@ function game.draw()
   -- draw camera stuff here
   
   if player.dir == 1 then
-    if player.walking then
+    if player.walking and player.speedY == 0 then
       WalkanimationR:draw(SBR, player.x-5, player.y,0,2.5,2.8) 
-    else      
+    elseif player.dashing then
+      DashanimationR:draw(DASHR, player.x-5, player.y,0,2.5,2.8)
+    elseif player.speedY < 0 then
+      love.graphics.draw(jump,player.x, player.y,0,2.5,2.8) 
+    elseif player.speedY == 0 then  
     IdleanimationR:draw(SBIR, player.x-5, player.y,0,2.5,2.8)
-    end
+    else
+    love.graphics.draw(fall,player.x, player.y,0,2.5,2.8)
+  end
        
-  --love.graphics.draw(samus,player.x-20,player.y-8,0,0.30,0.30)
+  
 else
-  if player.walking then
+  if player.walking and player.speedY == 0 then
     WalkanimationL:draw(SBL, player.x+5, player.y,0,2.5,2.8) 
-  else
+  elseif player.dashing then
+    DashanimationL:draw(DASHL, player.x-5, player.y,0,2.5,2.8)
+  elseif player.speedY < 0 then
+      love.graphics.draw(jump,player.x+80, player.y,0,-2.5,2.8) 
+  elseif player.speedY == 0 then
     IdleanimationL:draw(SBIL, player.x-5, player.y,0,2.5,2.8)
+  else
+    love.graphics.draw(fall,player.x+80, player.y,0,-2.5,2.8)
   end
        
   --love.graphics.draw(samus,player.x+85,player.y-8,0,-0.30,0.30)
-  end
-  love.graphics.rectangle("fill",floor.x,floor.y,floor.w,floor.h)
-  love.graphics.rectangle("fill",floor2.x,floor2.y,floor2.w,floor2.h)
+end
+  for i=1,#level.floors,1 do
+   local name = "floor" .. i
+   local t = level.floors
+   love.graphics.rectangle("fill",t[i].x,t[i].y,t[i].w,t[i].h)
+   
+end
+  --love.graphics.rectangle("fill",floor1.x,floor1.y,floor1.w,floor1.h)
+  --love.graphics.rectangle("fill",floor2.x,floor2.y,floor2.w,floor2.h)
   --love.graphics.rectangle("line",player.x,player.y,player.w,player.h) -- DRAW HIT BOX AROUND THE PLAYER
-  love.graphics.print(tostring(campost),100,100)
-  
+  if len > 0 then
+  love.graphics.print(tostring(cols[1].other),player.x,player.y-150)
+  end
 end)
   
 end
