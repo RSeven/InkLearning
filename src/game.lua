@@ -12,7 +12,7 @@ local world = bump.newWorld(64)
 local cam = gamera.new(0,0,2560,1440)
 
 local floor1 = {x=0,y=600,w=500,h=120}
---local floor2 = {x= 900, y=600,w=500,h=120}
+local floor2 = {x= 900, y=600,w=500,h=120}
 local player = Player:new(200, 50, 64, 128, 0, 0)
 
 local collides = {}
@@ -21,22 +21,21 @@ local stop_dash = cron.after(0.2,player.stop,player)
 cam:setScale(1)
 
 function game.load()
-  --samus = love.graphics.newImage ("assets/samus.png")
+
   love.mouse.setVisible(true)
   scenes = { intro = intro, menu = menu, game = game}
   
   gravity = 600
   campost = 0
+   t = level.floors[i]
+--[[for i=2,#level.floors,1 do
   
-for i=2,#level.floors,1 do
-   local name = "floor" .. i
-   local t = level.floors
-   world:add(floor2,t[i].x,t[i].y,t[i].w,t[i].h)
+   world:add(t,t[i].x,t[i].y,t[i].w,t[i].h)
 end
-
+--]]
   
   world:add(floor1, floor1.x, floor1.y, floor1.w, floor1.h)
-  --world:add(floor2, floor2.x, floor2.y, floor2.w, floor2.h)
+  world:add(floor2, floor2.x, floor2.y, floor2.w, floor2.h)
   world:add(player, player.x, player.y, player.w, player.h)
   
   SBR = love.graphics.newImage('assets/SBR.png')
@@ -110,7 +109,7 @@ end
   stop_dash:update(dt)
   
   player.x, player.y = actualX, actualY
-  
+  cam:setPosition(player.x, player.y)
  
   
 end
@@ -182,7 +181,7 @@ function game.mousemoved(x, y, dx, dy )
 end
 
 function game.draw()
-  cam:setPosition(player.x, player.y)
+  
   cam:draw(function(l,t,w,h)
   -- draw camera stuff here
   
@@ -224,9 +223,8 @@ end
   --love.graphics.rectangle("fill",floor1.x,floor1.y,floor1.w,floor1.h)
   --love.graphics.rectangle("fill",floor2.x,floor2.y,floor2.w,floor2.h)
   --love.graphics.rectangle("line",player.x,player.y,player.w,player.h) -- DRAW HIT BOX AROUND THE PLAYER
-  if len > 0 then
-  love.graphics.print(tostring(cols[1].other),player.x,player.y-150)
-  end
+  
+  --love.graphics.print(tostring(level.floors[1]),player.x,player.y-150)
 end)
   
 end
